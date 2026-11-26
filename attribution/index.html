@@ -315,7 +315,7 @@
 <body>
 <header>
   <h1>🎰 Tirage au sort des projets audiovisuels</h1>
-  <p>BUT MMI 2e année × Village by CA Rouen Vallée de Seine &mdash; 9 équipes, 9 commanditaires</p>
+  <p>BUT MMI 2e année × Village by CA Rouen Vallée de Seine &mdash; 8 équipes, 8 commanditaires</p>
 </header>
 
 <main>
@@ -324,12 +324,12 @@
     <div class="config-grid">
       <div class="card">
         <h2>🧑‍🤝‍🧑 Équipes</h2>
-        <p class="hint">Modifiez les noms des 9 équipes.</p>
+        <p class="hint">Modifiez les noms des 8 équipes.</p>
         <div id="team-inputs"></div>
       </div>
       <div class="card">
         <h2>🏢 Commanditaires</h2>
-        <p class="hint">Saisissez les 9 entreprises / projets du Village by CA.</p>
+        <p class="hint">Saisissez les 8 entreprises / projets du Village by CA.</p>
         <div id="project-inputs"></div>
       </div>
     </div>
@@ -384,7 +384,7 @@
   "use strict";
 
   var STORE_KEY = "tirage-projets-mmi-v2";
-  var NB = 9;
+  var NB = 8;  // nombre d'équipes / projets
   var LOGO_DIR = "logos/";
 
   var commanditaires = [
@@ -394,9 +394,8 @@
     { name: "Le groupe La Poste", logo: "la_poste.png" },
     { name: "CANDOR", logo: "candor.png" },
     { name: "HomeDoc", logo: "homedoc.png" },
-    { name: "Studyo", logo: "studyo.png" },
     { name: "bulbup", logo: "bulbup.png" },
-    { name: "MALO", logo: "malo.png" }  // <- fichier manquant : repli sur le nom en texte
+    { name: "MALO", logo: "malo.png" }
   ];
 
   var logoOk = {};   // nom de fichier -> true si chargé, false si introuvable

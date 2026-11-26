@@ -1,0 +1,41 @@
+# ============================================================================
+#  challengeVBCA/ — URL propres
+#
+#  Adresses publiques affichees dans la barre du navigateur :
+#    /mmi2/challengeVBCA/                -> page de vote (p=vote par defaut)
+#    /mmi2/challengeVBCA/resultats?cle=… -> classement (la cle reste requise)
+#    /mmi2/challengeVBCA/ecran?cle=…     -> ecran de projection
+#
+#  Les adresses internes (votes/index.php) restent utilisables via les
+#  favoris : l'ancienne URL redirige vers la racine en conservant la
+#  chaine de requete (?p=... &cle=...).
+# ============================================================================
+
+# Ne pas lister le contenu des dossiers
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# --- 1. La racine du projet sert directement la page de vote.
+#        La requete eventuelle (?p=... ou ?merci=...) est conservee.
+RewriteRule ^$ votes/index.php [L]
+
+# --- 2. Chemins propres pour les deux pages privees.
+#        La cle admin reste exigee par le PHP via ?cle= : elle n'est posee
+#        ni par le serveur ni tronquee ici (sinon les resultats deviendraient
+#        publiques des qu'on devine le chemin). QSA fusionne ?p= avec ?cle=.
+RewriteRule ^(ecran|resultats)/?$ votes/index.php?p=$1 [QSA,L]
+
+# --- 3. Ancienne URL directe : redirection vers la racine, en conservant
+#        les parametres. THE_REQUEST garantit qu'on ne boucle pas sur les
+#        reecritures internes ; le filtre GET evite de casser les POST.
+RewriteCond %{THE_REQUEST} \s/mmi2/challengeVBCA/votes/index\.php
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteRule ^votes/index\.php$ /mmi2/challengeVBCA/ [R=302,L]
+
+# --- 4. Protection standard (deja dans httpd.conf de XAMPP, on redouble).
+<FilesMatch "^\.(?!well-known)">
+    Require all denied
+</FilesMatch>
+</IfModule>

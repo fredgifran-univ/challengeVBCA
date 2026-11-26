@@ -37,9 +37,8 @@ $PROJETS = [
     4 => 'Le groupe La Poste',
     5 => 'CANDOR',
     6 => 'HomeDoc',
-    7 => 'Studyo',
-    8 => 'bulbup',
-    9 => 'MALO',
+    7 => 'bulbup',
+    8 => 'MALO',
 ];
 
 /* Logos des partenaires : chemin du dossier (relatif à ce fichier, à adapter
@@ -54,9 +53,8 @@ $LOGOS = [
     4 => 'la_poste.png',
     5 => 'candor.png',
     6 => 'homedoc.png',
-    7 => 'studyo.png',
-    8 => 'bulbup.png',
-    9 => 'malo.png',
+    7 => 'bulbup.png',
+    8 => 'malo.png',
 ];
 
 function logoFichier(?int $id): ?string {
@@ -68,9 +66,12 @@ function logoFichier(?int $id): ?string {
 
 function baliseLogo(?int $id, string $classe): string {
     $fichier = logoFichier($id);
-    return $fichier
-        ? '<img class="' . htmlspecialchars($classe) . '" src="' . htmlspecialchars($fichier) . '" alt="Logo">'
-        : '';
+    if (!$fichier) return '';
+    /* URL absolue pour le navigateur : chemin public = DOSSIER_LOGOS sans le
+       préfixe "../" (relatif à ce fichier), résolu depuis la racine du projet
+       via urlVote() — indépendant de la balise <base> et de l'URL d'accès. */
+    $cheminPublic = urlVote() . preg_replace('#^(?:\.\./)+#', '', $fichier);
+    return '<img class="' . htmlspecialchars($classe) . '" src="' . htmlspecialchars($cheminPublic) . '" alt="Logo">';
 }
 
 /* ============================ OUTILS ============================ */
@@ -111,12 +112,15 @@ function db(): PDO {
     return $pdo;
 }
 
-/* URL publique de la page de vote, pour le QR code projeté. */
+/* URL publique de la page de vote, pour le QR code projeté.
+   On repart de la racine du projet (deux niveaux au-dessus de
+   votes/index.php), indépendamment du chemin réécrit utilisé pour
+   arriver ici : le QR pointe toujours vers la page de vote. */
 function urlVote(): string {
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
     $host  = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $self  = strtok($_SERVER['REQUEST_URI'] ?? '/vote.php', '?');
-    return ($https ? 'https' : 'http') . '://' . $host . $self;
+    $base  = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/votes/index.php', 2), '/');
+    return ($https ? 'https' : 'http') . '://' . $host . $base . '/';
 }
 
 /* QR code : service externe simple. Si le site est sans accès Internet
@@ -130,7 +134,7 @@ function accueilAdmin(): bool {
     if (!isset($_GET['cle']) || !hash_equals(CLE_ADMIN, (string)$_GET['cle'])) {
         http_response_code(403);
         exit('<!doctype html><meta charset="utf-8"><body style="font-family:sans-serif;background:#0f1226;color:#f4f6ff;display:grid;place-items:center;height:100vh;margin:0">'
-           . '<p>Accès réservé à l\'écran de projection. Ajoutez <code>&cle=' . CLE_ADMIN . '</code> à l\'adresse.</p></body>');
+           . '<p>Accès réservé à l\'écran de projection. Demandez l\'adresse complète à l\'organisation.</p></body>');
     }
     return true;
 }
@@ -165,7 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'vote') {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Coup de cœur du public - MMI x Village by CA</title>
+<base href="<?= urlVote() ?>" />
+<title>Pitch Coup de cœur du public - MMI x Village by CA</title>
 <style>
   :root {
     --bg: #0f1226;
@@ -336,7 +341,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'vote') {
     $merci = (int)($_GET['merci'] ?? 0);
 ?>
 <header>
-  <h1>🏆 Coup de cœur du public</h1>
+  <h1>🏆 Pitch Coup de cœur du public</h1>
   <p>BUT MMI 2e année x Village by CA Rouen Vallée de Seine<br>
      Notez chaque projet de 1 à 5 étoiles. Vous pouvez modifier vos notes.</p>
 </header>
@@ -346,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'vote') {
     <div class="projet-tete">
       <?= baliseLogo($i, 'logo-projet') ?>
       <div>
-        <span class="num">Projet <?= $i ?>/9</span>
+        <span class="num">Projet <?= $i ?>/8</span>
         <h2><?= htmlspecialchars($nom) ?></h2>
         <?php if ($merci === $i): ?><span class="merci">Note enregistrée ✓</span><?php endif; ?>
       </div>
@@ -356,9 +361,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'vote') {
       <div class="vote-ligne">
         <div class="etoiles">
           <?php for ($s = 1; $s <= 5; $s++): ?>
-            <input type="radio" id="p<?= $i ?>s<?= $s ?>" name="score" value="<?= $s ?>"
-                   <?= ($monVote[$i] ?? 0) === $s ? 'checked' : '' ?>>
-            <label for="p<?= $i ?>s<?= $s ?>" aria-label="<?= $s ?> étoiles">★</label>
+            <input type="radio" id="p<?= $i ?>s<?= $s ?>" name="score" value="<?= 6-$s ?>"
+                   <?= ($monVote[$i] ?? 0) === 6-$s ? 'checked' : '' ?>>
+            <label for="p<?= $i ?>s<?= $s ?>" aria-label="<?= 6-$s ?> étoiles">★</label>
           <?php endfor; ?>
         </div>
         <button type="submit">Noter</button>
@@ -391,8 +396,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'vote') {
     $total = (int)db()->query('SELECT COUNT(*) FROM votes')->fetchColumn();
 ?>
 <div class="ecran">
-  <h1>🏆 Coup de cœur du public</h1>
-  <p class="sous">Scannez ce QR code avec votre téléphone<br>pour noter les 9 projets pendant les projections</p>
+  <h1>🏆 Pitch Coup de cœur du public</h1>
+  <p class="sous">Scannez ce QR code avec votre téléphone<br>pour noter les 8 projets pendant les pitches</p>
   <div class="qr-carte"><img src="<?= htmlspecialchars(qrUrl(urlVote())) ?>" alt="QR code vers la page de vote"></div>
   <div class="compteur">
     <?= $total ?> note<?= $total > 1 ? 's' : '' ?> reçue<?= $total > 1 ? 's' : '' ?>
